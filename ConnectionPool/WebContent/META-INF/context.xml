@@ -1,12 +1,24 @@
-<Context  path="/JavaExamples" docBase="servlets-examples" debug="5" reloadable="true" crossContext="true">
+<!-- path="/JavaExamples" docBase="servlets-examples" debug="5" reloadable="true" crossContext="true" -->
+<Context >
   <Resource name="jdbc/ConnectionPool" auth="Container"
               type="javax.sql.DataSource" 
               driverClassName="com.mysql.jdbc.Driver"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
               url="jdbc:mysql://localhost:3306/exampleDb"
               username="congpc" password="Demo_1987" 
-              maxActive="100" maxIdle="10"
-              maxWait="-1"/> 
+              initialSize="10"
+              suspectTimeout="50"
+              timeBetweenEvictionRunsMillis="30000"
+              minEvictableIdleTimeMillis="60000"
+              maxActive="100" maxIdle="60" maxWait="10000"
+              removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
+              abandonWhenPercentageFull="50"
+              jdbcInterceptors = "ConnectionState;StatementFinalizer;ResetAbandonedTimer"
+              testOnBorrow="true"
+              validationQuery="SELECT 1"
+              validationInterval="30000" /> 
 </Context>
+
 <!-- <Context >
   <Resource
     name="jdbc/line"

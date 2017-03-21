@@ -92,7 +92,17 @@ public class ConnectionPoolServlet extends HttpServlet {
 	    try {
 	      connection = getConnection(poolingEnabled);
 	      stmt = connection.createStatement();
-	      String sqlSelect = "SELECT exampleDb.orders.orderID, exampleDb.orders.customerID, exampleDb.lines.lineID, exampleDb.lines.lineName, exampleDb.lines.productName FROM exampleDb.orders INNER JOIN exampleDb.lines ON exampleDb.lines.orderID = exampleDb.orders.orderID ORDER BY exampleDb.orders.orderID";
+	      
+	      String sqlSelectCount = "SELECT COUNT(*) AS total FROM exampleDb.orders";
+	      rs = stmt.executeQuery(sqlSelectCount);
+	      int total = 0;
+	      while(rs.next()){
+	    	      total = rs.getInt("total");
+	    	  }
+	      out.println("<br>"+ "Item total:" + total);
+	      rs.close();
+	      
+	      String sqlSelect = "SELECT exampleDb.orders.orderID, exampleDb.orders.customerID, exampleDb.lines.lineID, exampleDb.lines.lineName, exampleDb.lines.productName FROM exampleDb.orders INNER JOIN exampleDb.lines ON exampleDb.lines.orderID = exampleDb.orders.orderID ORDER BY exampleDb.orders.orderID DESC LIMIT 100";
 	      rs = stmt.executeQuery(sqlSelect);
 	      ResultSetMetaData dbMeta = rs.getMetaData();
 	      out.println("<br><table border='1'>");
@@ -147,9 +157,9 @@ public class ConnectionPoolServlet extends HttpServlet {
 //		boolean batchEnabled = queryStr == null || !queryStr.equals("disableBatch");
 //		boolean prepareEnabled = queryStr == null || !queryStr.equals("disablePrepare");
 		boolean poolingEnabled = true;
-		boolean batchEnabled = false;
+		boolean batchEnabled = true;
 		boolean prepareEnabled = true;
-		int loopCount = 1000;
+		int loopCount = 1;
 		Connection connection = null;
 		PreparedStatement stmtp1 = null;
 		Statement stmt2 = null;
@@ -160,40 +170,58 @@ public class ConnectionPoolServlet extends HttpServlet {
 		try {
 			for (int i = 1; i <= loopCount; i++) {
 				connection = getPostConnection(poolingEnabled);
-				if (batchEnabled) {
-					
-				} else {
-					long orderID = 0;
-					String sqlOrderInsert = "insert into exampleDb.orders (customerID) values (?)";
-					stmtp1 = connection.prepareStatement(sqlOrderInsert, Statement.RETURN_GENERATED_KEYS);
-					stmtp1.setLong(1, i);
-					int affectedRows = stmtp1.executeUpdate();
-					if (affectedRows == 0) {
-						throw new SQLException("Creating order failed, no rows affected.");
+				String sqlOrderInsert = "insert into exampleDb.orders (customerID) values (?)";
+				long orderID = 0;
+				stmtp1 = connection.prepareStatement(sqlOrderInsert, Statement.RETURN_GENERATED_KEYS);
+				stmtp1.setLong(1, i);
+				int affectedRows = stmtp1.executeUpdate();
+				if (affectedRows == 0) {
+					throw new SQLException("Creating order failed, no rows affected.");
+				}
+				try (ResultSet generatedKeys = stmtp1.getGeneratedKeys()) {
+					if (generatedKeys.next()) {
+						orderID = generatedKeys.getLong(1);
+					}else {
+						throw new SQLException("Creating user failed, no ID obtained.");
 					}
-					try (ResultSet generatedKeys = stmtp1.getGeneratedKeys()) {
-						if (generatedKeys.next()) {
-							orderID = generatedKeys.getLong(1);
-						}else {
-							throw new SQLException("Creating user failed, no ID obtained.");
+				}
+				String name = "name-"+ orderID;
+				String product = "product-"+ orderID;
+				String sqlLineInsert = "insert into exampleDb.lines (lineName,productName,orderID) values (?,?,?)";
+				
+				if (batchEnabled) {
+					final int batchSize = 100;
+					int count = 0;
+					for (int j = 1; j <= 1000; j++) {
+						stmtp2 = connection.prepareStatement(sqlLineInsert);
+						name = "batch-name-" + j;
+						product = "batch-product-" + j;
+						stmtp2.setString(1, name);
+						stmtp2.setString(2, product);
+						stmtp2.setLong(3, orderID);
+						stmtp2.addBatch();
+						if(++count % batchSize == 0) {
+							stmtp2.executeBatch();
 						}
 					}
-					String name = "name-"+ orderID;
-					String product = "product-"+ orderID;
+					stmtp2.executeBatch();
+				} else {
 					if (prepareEnabled) {
-						String sqlLineInsert = "insert into exampleDb.lines (lineName,productName,orderID) values (?,?,?)";
 						stmtp2 = connection.prepareStatement(sqlLineInsert);
 						stmtp2.setString(1, name);
 						stmtp2.setString(2, product);
 						stmtp2.setLong(3, orderID);
 						stmtp2.executeUpdate();
 					} else {
-						String sqlLineInsert = "insert into exampleDb.lines (lineName,productName,orderID) values ('"+name+"','" + product + "','" + orderID +"')";
+						sqlLineInsert = "insert into exampleDb.lines (lineName,productName,orderID) values ('"+name+"','" + product + "','" + orderID +"')";
 						stmt2 = connection.createStatement();
 						stmt2.executeUpdate(sqlLineInsert);
 					}
 				}
 				resultFlag = true;
+				if (stmtp1 != null) stmtp1.close();
+				if (stmt2 != null) stmt2.close();
+				if (stmtp2 != null) stmtp2.close();
 				connection.close();
 			}
 		}
