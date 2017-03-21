@@ -1,0 +1,50 @@
+<Context  path="/JavaExamples" docBase="servlets-examples" debug="5" reloadable="true" crossContext="true">
+  <Resource name="jdbc/ConnectionPool" auth="Container"
+              type="javax.sql.DataSource" 
+              driverClassName="com.mysql.jdbc.Driver"
+              url="jdbc:mysql://localhost:3306/exampleDb"
+              username="congpc" password="Demo_1987" 
+              maxActive="100" maxIdle="10"
+              maxWait="-1"/> 
+</Context>
+<!-- <Context >
+  <Resource
+    name="jdbc/line"
+    auth="Container"
+    type="javax.sql.DataSource"
+    maxActive="150"
+    maxIdle="60"
+    maxWait="10000"
+    driverClassName="com.mysql.jdbc.Driver"
+    url="jdbc:mysql://10.22.0.222:3306/msg_delivery"
+    username="whitebear"
+    password="e5HmJhYsLtBm"
+    factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+    initialSize="10"
+    suspectTimeout="50"
+    timeBetweenEvictionRunsMillis="30000"
+    minEvictableIdleTimeMillis="60000"
+    minIdle="30"
+    testOnBorrow="true"
+    validationQuery="SELECT 1"
+    validationInterval="30000"
+    removeAbandoned="true"
+    removeAbandonedTimeout="60"
+    logAbandoned="true"
+    abandonWhenPercentageFull="50"
+    jdbcInterceptors = "ConnectionState;StatementFinalizer;ResetAbandonedTimer"
+   />
+</Context> -->
+<!--
+    url="jdbc:mysql://210.140.144.115:3306/msg_delivery"
+    username="whitebear"
+    password="e5HmJhYsLtBm" -->
+
+<!-- maxActive : số connection tối đa có thể lấy ra từ pool cùng lúc -->
+<!-- maxIdle : số connection tối đa không hoạt động có thể giữ lại trong pool tại một thời điểm -->
+<!-- initialSize  số connection tạo ra ban đầu -->
+<!-- minIdle  số connection tối thiểu không hoạt động nên giữ lại trong pool tại một thời điểm -->
+<!-- maxWait  nếu có tối đa maxActivate connections đang hoạt động, pool sẽ chờ tối đa khoảng thời gian này trước khi trả về -->
+<!-- timeBetweenEvictionRunsMillis  chu kỳ chạy clean các idle và abandoned connections -->
+<!-- testOnBorrow validate connection trước khi lấy ra từ pool -->
+<!-- removeAbandoned  Nếu true, các abandoned connections sẽ bị xóa khỏi pool nếu chúng vượt quá removeAbandonedTimeout. Một connection bị coi là abandoned nếu nó được sử dụng lâu hơn removeAbandonedTimeout -->
