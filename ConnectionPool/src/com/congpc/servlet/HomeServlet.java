@@ -50,7 +50,7 @@ public class HomeServlet extends HttpServlet{
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		int demoType = 0;//0: Japanese site, 1: English site, 2:TTV site
+		int demoType = 2;//0: Japanese site, 1: English site, 2:TTV site
 //		String time = req.getParameter("time");
 //      int secs = Integer.valueOf(time);
       // max 10 seconds
@@ -143,10 +143,31 @@ public class HomeServlet extends HttpServlet{
 	}
 	
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		System.out.println("doPost() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
-		try (BufferedReader br = req.getReader()) {
-            br.lines().forEach(System.out::println);
-        }
+//		try (BufferedReader br = req.getReader()) {
+//            br.lines().forEach(System.out::println);
+//        }
+		long startTime = System.currentTimeMillis();
+		String startStr = "doPost - Start"
+        		+ "::Hash=" + this.hashCode() 
+        		+ "::Name=" + Thread.currentThread().getName() 
+        		+ "::ID=" + Thread.currentThread().getId();
+        System.out.println(startStr);
+		try  {
+			System.out.println("Async Supported? " + req.isAsyncSupported());
+			String signature = "Signature";
+			System.out.println("signature=" + signature);
+			System.out.println("response=" + res.hashCode());
+			pool.execute(new HandelRequestProcessRunnable(signature , res) );
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		long endTime = System.currentTimeMillis();
+		String endStr = "doPost - End"
+        		+ "::Hash=" + this.hashCode() 
+        		+"::Name=" + Thread.currentThread().getName() + "::ID="
+            + Thread.currentThread().getId() + "::Time Taken="
+            + (endTime - startTime) + " ms.";
+        System.out.println(endStr);
 	}
 	
 	private static class AsyncListenerImpl implements AsyncListener {
