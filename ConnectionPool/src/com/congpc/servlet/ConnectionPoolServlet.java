@@ -20,6 +20,7 @@ public class ConnectionPoolServlet extends HttpServlet {
 	private static long pooledDuration, nonPooledDuration;
 	private static long pooledCount, nonPooledCount;
 	private DataSource datasource = null;
+//	private static int batchCount;
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -30,6 +31,7 @@ public class ConnectionPoolServlet extends HttpServlet {
     }
     
     public void init(ServletConfig config) throws ServletException {
+    		System.out.println("Servlet initialized.");
         try {
           //Create a datasource for pooled connections.
           //Register the driver for non pooled connections.
@@ -157,7 +159,7 @@ public class ConnectionPoolServlet extends HttpServlet {
 //		boolean batchEnabled = queryStr == null || !queryStr.equals("disableBatch");
 //		boolean prepareEnabled = queryStr == null || !queryStr.equals("disablePrepare");
 		boolean poolingEnabled = true;
-		boolean batchEnabled = true;
+		boolean batchEnabled = false;
 		boolean prepareEnabled = true;
 		int loopCount = 1;
 		Connection connection = null;
@@ -190,21 +192,33 @@ public class ConnectionPoolServlet extends HttpServlet {
 				String sqlLineInsert = "insert into exampleDb.lines (lineName,productName,orderID) values (?,?,?)";
 				
 				if (batchEnabled) {
-					final int batchSize = 100;
-					int count = 0;
-					for (int j = 1; j <= 1000; j++) {
-						stmtp2 = connection.prepareStatement(sqlLineInsert);
-						name = "batch-name-" + j;
-						product = "batch-product-" + j;
+//					BatchSingleton batchObj = BatchSingleton.getInstance();
+//					Connection batchCon = batchObj.getBatchConnection();
+//					PreparedStatement batchSta = batchObj.getBatchStatement();
+//					if (batchCon == null || batchCon.isClosed()) {
+//						System.out.println("Create batch connection");
+//						batchObj.setBatchConnection(getPostConnection(false));
+//					}
+//					if (batchSta == null) {
+//						System.out.println("Create batch statement");
+//						batchSta = batchCon.prepareStatement(sqlLineInsert);
+//						batchObj.setBatchStatement(batchSta);
+//					}
+//					final int batchSize = 300;
+					stmtp2 = connection.prepareStatement(sqlLineInsert);
+					for (int j = 0; j < 5; j++) {
+						name = j + "batch-name-" + orderID;
+						product = j + "batch-product-" + orderID;
 						stmtp2.setString(1, name);
 						stmtp2.setString(2, product);
 						stmtp2.setLong(3, orderID);
 						stmtp2.addBatch();
-						if(++count % batchSize == 0) {
-							stmtp2.executeBatch();
-						}
 					}
 					stmtp2.executeBatch();
+//					if(++batchCount % batchSize == 0) {
+//						System.out.println("Execute batch processing at " + batchCount);
+//						batchSta.executeBatch();
+//					}
 				} else {
 					if (prepareEnabled) {
 						stmtp2 = connection.prepareStatement(sqlLineInsert);
@@ -222,7 +236,7 @@ public class ConnectionPoolServlet extends HttpServlet {
 				if (stmtp1 != null) stmtp1.close();
 				if (stmt2 != null) stmt2.close();
 				if (stmtp2 != null) stmtp2.close();
-				connection.close();
+				if (connection != null) connection.close();
 			}
 		}
 		catch (SQLException e) {
