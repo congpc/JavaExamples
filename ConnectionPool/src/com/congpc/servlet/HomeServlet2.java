@@ -22,10 +22,10 @@ import javax.servlet.http.HttpServletResponse;
 //DemoType 2: http://www.journaldev.com/2008/async-servlet-feature-of-servlet-3
 
 //Async supported
-@WebServlet(value="/", initParams = {@WebInitParam(name="default", value="Demo AsyncServlet")}, asyncSupported = true)
+@WebServlet(value="/async", initParams = {@WebInitParam(name="default", value="Demo AsyncServlet")}, asyncSupported = true)
 //Async not supported
 //@WebServlet(value="/", initParams = {@WebInitParam(name="default", value="Demo NonAsyncServlet")})
-public class HomeServlet extends HttpServlet{
+public class HomeServlet2 extends HttpServlet{
 	public static ExecutorService pool = Executors.newFixedThreadPool(10);
 	
 	private int sleepSecs = 5000; // default: sleep 5s
@@ -49,99 +49,20 @@ public class HomeServlet extends HttpServlet{
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		int demoType = 2; //0: Japanese site, 1: English site, 2:TTV site
-		String type = req.getParameter("type");
-		if (type != null) {
-			int typeInt= Integer.valueOf(type);
-			if (typeInt == (int)typeInt){
-				demoType = typeInt;
-			}
-		}
-		String time = req.getParameter("time");
-		if (time != null) {
-			sleepSecs = Integer.valueOf(time); 
-			if (sleepSecs > 10000)
-				sleepSecs = 10000; //max 10 seconds
-		}
-		long startTime = System.currentTimeMillis();
-		String startStr = "AsyncServlet Start" + "::Hash=" + this.hashCode() 
-			+ "::Name=" + Thread.currentThread().getName() 
-			+ "::ID=" + Thread.currentThread().getId();
-		System.out.println(startStr);
-		
-        PrintWriter	out = res.getWriter();
-        res.setContentType("text/html");
-        out.println("<html><head><title>Thread Pool</title></head><body>");
-        out.println(startStr + "<br>");
-        
-	    if (defaultStr.length() > 0) {
-	    		out.println("Hello "+ defaultStr + "<br>");
-	    } else {
-	    	    out.println("Welcome to home page<br>");
-	    }
-        // Enable async
-        if (demoType == 0 || demoType == 1) {
-        		req.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
-        }
-        if (demoType == 0) {
-        		AsyncContext ctx = req.startAsync();
-            ctx.addListener(new AsyncListenerImpl());
-            ctx.start(() -> {
-                try (PrintWriter pw = ctx.getResponse().getWriter()) {
-	                	long startTime2 = System.currentTimeMillis();
-		    			String startStr2 = "AsyncThread - Start" + "::Hash=" + this.hashCode() 
-		    	        		+ "::Name=" + Thread.currentThread().getName() 
-		    	        		+ "::ID=" + Thread.currentThread().getId();
-		    			System.out.println(startStr2);
-                		System.out.println("Async Supported? " + ctx.getRequest().isAsyncSupported());
-                    Thread.sleep(sleepSecs);
-                    System.out.println("AsyncServlet process done.");
-                    pw.println("<h1>Async Process Done</h1>");
-                    long endTime2 = System.currentTimeMillis();
-                    String endStr2 = "AsyncThread - End"
-                    		+ "::Hash=" + this.hashCode() 
-                    		+"::Name=" + Thread.currentThread().getName() + "::ID="
-                        + Thread.currentThread().getId() + "::Time Taken="
-                        + (endTime2 - startTime2) + " ms.";
-                    System.out.println(endStr2);
-                    pw.println("<h1>"+endStr2+"</h1>");
-                } catch (IOException | InterruptedException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    ctx.complete();
-                }
-            });
-            res.getWriter().println("<h1>AsyncServlet by Japanese site</h1>");
-        }else if (demoType == 1) {
-        		AsyncContext asyncCtx = req.startAsync();
-            asyncCtx.addListener(new AppAsyncListener());
-            asyncCtx.setTimeout(9000);
-            
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) req.getServletContext().getAttribute("executor");
-            executor.execute(new AsyncRequestProcessor(asyncCtx, sleepSecs));
-            res.getWriter().println("<h1>AsyncServlet by ThreadPoolExecutor site</h1>");
-        }else {
-        		try  {
-        			System.out.println("Async Supported? " + req.isAsyncSupported());
-	    			String signature = "Signature";
-	    			System.out.println("signature=" + signature);
-	    			System.out.println("response=" + res.hashCode());
-	    			pool.execute(new HandelRequestProcessRunnable(signature , res) );
-	    			res.getWriter().println("<h1>Servlet using Executors.newFixedThreadPool with size = 10</h1>");
-	    		} catch (Exception e) {
-	    			e.printStackTrace();
-	    		}
-        }
-        
-        long endTime = System.currentTimeMillis();
-        String endStr = "AsyncServlet End"
-        		+ "::Hash=" + this.hashCode() 
-        		+"::Name=" + Thread.currentThread().getName() + "::ID="
-            + Thread.currentThread().getId() + "::Time Taken="
-            + (endTime - startTime) + " ms.";
-        System.out.println(endStr);
-        out.println(endStr + "<br/>");
-        out.println("</body></html>");
+		AsyncContext ctx = req.startAsync();
+		ctx.start(() -> {
+			try {
+		        	System.out.println("Async Supported? " + req.isAsyncSupported());
+		    		String signature = "Signature";
+		    		System.out.println("signature=" + signature);
+		    		System.out.println("response=" + res.hashCode());
+	        	    pool.execute(new HandelRequestProcessRunnable(signature , res) );
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	        } finally {
+	            ctx.complete();
+	        }
+		});
 	}
 	
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {

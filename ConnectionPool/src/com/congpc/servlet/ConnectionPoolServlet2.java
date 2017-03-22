@@ -178,18 +178,32 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 		+ "::Name=" + Thread.currentThread().getName() 
 		+ "::ID=" + Thread.currentThread().getId());
 		
-		try (BufferedReader br = req.getReader()) {
-            br.lines().forEach(System.out::println);
-        }
-		
-//		String queryStr = req.getQueryString();
-//		boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
-//		boolean batchEnabled = queryStr == null || !queryStr.equals("disableBatch");
-//		boolean prepareEnabled = queryStr == null || !queryStr.equals("disablePrepare");
 		boolean poolingEnabled = true;
 		boolean batchEnabled = false;
 		boolean prepareEnabled = true;
 		int loopCount = 1;
+		
+		String poolingStr = req.getParameter("disablePooling");
+		if (poolingStr != null) {
+			poolingEnabled = Boolean.valueOf(poolingStr); 
+		}
+		String batchStr = req.getParameter("disableBatch");
+		if (batchStr != null) {
+			batchEnabled = Boolean.valueOf(batchStr); 
+		}
+		String prepareStr = req.getParameter("disablePrepare");
+		if (prepareStr != null) {
+			prepareEnabled = Boolean.valueOf(prepareStr); 
+		}
+		String loopStr = req.getParameter("loop");
+		if (loopStr != null) {
+			loopCount = Integer.valueOf(loopStr);
+		}
+		System.out.println("poolingEnabled="+poolingEnabled);
+		System.out.println("batchEnabled="+batchEnabled);
+		System.out.println("prepareEnabled="+prepareEnabled);
+		System.out.println("loop="+loopCount);
+		
 		Connection connection = null;
 		PreparedStatement stmtp1 = null;
 		Statement stmt2 = null;
