@@ -239,7 +239,7 @@ Non Pool: /JavaExamples/ConnectionPool2?disablePooling</stringProp>
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">1</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.num_threads">1000</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
         <longProp name="ThreadGroup.start_time">1490080906000</longProp>
         <longProp name="ThreadGroup.end_time">1490080906000</longProp>
@@ -260,7 +260,7 @@ Non Pool: /JavaExamples/ConnectionPool2?disablePooling</stringProp>
               </elementProp>
               <elementProp name="disableBatch" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">false</stringProp>
+                <stringProp name="Argument.value">true</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
                 <boolProp name="HTTPArgument.use_equals">true</boolProp>
                 <stringProp name="Argument.name">disableBatch</stringProp>
