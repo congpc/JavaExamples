@@ -1,10 +1,7 @@
 package com.congpc.servlet;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -29,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 //@WebServlet(value="/", initParams = {@WebInitParam(name="default", value="Demo NonAsyncServlet")})
 public class HomeServlet extends HttpServlet{
 	public static ExecutorService pool = Executors.newFixedThreadPool(10);
+	private int sleepSecs = 5000; // default: sleep 5s
 	/**
 	 * 
 	 */
@@ -50,13 +48,20 @@ public class HomeServlet extends HttpServlet{
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		int demoType = 2;//0: Japanese site, 1: English site, 2:TTV site
-//		String time = req.getParameter("time");
-//      int secs = Integer.valueOf(time);
-      // max 10 seconds
-//      if (secs > 10000)
-//          secs = 10000;
-		
+		int demoType = 2; //0: Japanese site, 1: English site, 2:TTV site
+		String type = req.getParameter("type");
+		if (type != null) {
+			int typeInt= Integer.valueOf(type);
+			if (typeInt == (int)typeInt){
+				demoType = typeInt;
+			}
+		}
+		String time = req.getParameter("time");
+		if (time != null) {
+			sleepSecs = Integer.valueOf(time); 
+			if (sleepSecs > 10000)
+				sleepSecs = 10000; //max 10 seconds
+		}
 		long startTime = System.currentTimeMillis();
 		String startStr = "AsyncServlet Start"
         		+ "::Hash=" + this.hashCode() 
@@ -78,7 +83,6 @@ public class HomeServlet extends HttpServlet{
         if (demoType == 0 || demoType == 1) {
         		req.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
         }
-        int secs = 5000; // sleep 5s
         if (demoType == 0) {
         		AsyncContext ctx = req.startAsync();
             ctx.addListener(new AsyncListenerImpl());
@@ -86,13 +90,12 @@ public class HomeServlet extends HttpServlet{
                 try (PrintWriter pw = ctx.getResponse().getWriter()) {
 	                	long startTime2 = System.currentTimeMillis();
 		    			String startStr2 = "AsyncThread - Start"
-		    	        		+ "::Hash=" + this.hashCode() 
+		    				+ "::Hash=" + this.hashCode() 
 		    	        		+ "::Name=" + Thread.currentThread().getName() 
 		    	        		+ "::ID=" + Thread.currentThread().getId();
 		    	        System.out.println(startStr2);
-	    	        
                 		System.out.println("Async Supported? " + ctx.getRequest().isAsyncSupported());
-                    Thread.sleep(secs);
+                    Thread.sleep(sleepSecs);
                     System.out.println("AsyncServlet process done.");
                     pw.println("<h1>Async Process Done</h1>");
                     long endTime2 = System.currentTimeMillis();
@@ -116,7 +119,7 @@ public class HomeServlet extends HttpServlet{
             asyncCtx.setTimeout(9000);
             
             ThreadPoolExecutor executor = (ThreadPoolExecutor) req.getServletContext().getAttribute("executor");
-            executor.execute(new AsyncRequestProcessor(asyncCtx, secs));
+            executor.execute(new AsyncRequestProcessor(asyncCtx, sleepSecs));
             res.getWriter().println("<h1>AsyncServlet by ThreadPoolExecutor site</h1>");
         }else {
         		try  {
@@ -143,6 +146,16 @@ public class HomeServlet extends HttpServlet{
 	}
 	
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+		//But only if the POST data is encoded as key-value pairs of content type: "application/x-www-form-urlencoded" 
+		//like when you use a standard HTML form.
+		String time = req.getParameter("time");
+		if (time != null) {
+			sleepSecs = Integer.valueOf(time); 
+			if (sleepSecs > 10000)
+				sleepSecs = 10000; //max 10 seconds
+		}
+		
+		System.out.println("[Post]time="+time);
 //		try (BufferedReader br = req.getReader()) {
 //            br.lines().forEach(System.out::println);
 //        }
@@ -215,15 +228,21 @@ public class HomeServlet extends HttpServlet{
 	    				System.out.println("First response is null");
 	    				return;
 	    			}
-				Thread.sleep(5000);
+				Thread.sleep(sleepSecs);
 				if (this.res == null) {
     					System.out.println("Second response is null");
     					return;
     				}
+				this.res.setStatus(HttpServletResponse.SC_OK);
 //				try (PrintWriter pw = this.res.getWriter()) {
-//	                pw.println("<h1>Async Process using pool</h1>");
+//					if (pw != null) {
+//						//pw.println("<h1>FixedPool done</h1>"); // Can not print response
+//						System.out.println("Writer is not null");
+//					} else {
+//						System.out.println("Writer is null");
+//					}
 //	            } catch (IOException e) {
-//	                e.printStackTrace();
+//	            		e.printStackTrace();
 //	            }
 				
 				System.out.println("signature after 5s=" + this.signature);
