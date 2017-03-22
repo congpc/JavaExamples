@@ -30,8 +30,9 @@ public class ConnectionPoolServlet extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
     
+    @Override
     public void init(ServletConfig config) throws ServletException {
-    		System.out.println("Servlet initialized.");
+    		System.out.println("init() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
         try {
           //Create a datasource for pooled connections.
           //Register the driver for non pooled connections.
@@ -45,7 +46,11 @@ public class ConnectionPoolServlet extends HttpServlet {
           e.printStackTrace();
         }
       }
-
+    @Override
+    public void destroy() {
+        System.out.println("destroy() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
+    }
+    
       private Connection getConnection(boolean pooledConnection) throws SQLException {
         if (pooledConnection) {
           pooledCount++;
@@ -71,6 +76,8 @@ public class ConnectionPoolServlet extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+		System.out.println("doGet() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
+		
 		String queryStr = req.getQueryString();
 	    boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
 		//boolean poolingEnabled = false;
@@ -154,6 +161,11 @@ public class ConnectionPoolServlet extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+		System.out.println("doPost() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
+		try (BufferedReader br = req.getReader()) {
+            br.lines().forEach(System.out::println);
+        }
+		
 //		String queryStr = req.getQueryString();
 //		boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
 //		boolean batchEnabled = queryStr == null || !queryStr.equals("disableBatch");

@@ -10,7 +10,16 @@
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
   
-  <listener>
+  <!-- <servlet>
+    <servlet-name>ConnectionPoolServlet</servlet-name>
+    <servlet-class>com.congpc.servlet.ConnectionPoolServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ConnectionPoolServlet</servlet-name>
+    <url-pattern>/ConnectionPool</url-pattern>
+  </servlet-mapping> -->
+  
+  <!-- <listener>
     <listener-class>com.congpc.servlet.AppContextListener</listener-class>
-  </listener>
+  </listener> -->
 </web-app>
