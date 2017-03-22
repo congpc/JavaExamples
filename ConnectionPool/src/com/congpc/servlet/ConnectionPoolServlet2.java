@@ -11,19 +11,19 @@ import javax.sql.*;
 /**
  * Servlet implementation class ConnectionPoolServlet
  */
-@WebServlet("/ConnectionPool")
-public class ConnectionPoolServlet extends HttpServlet {
+@WebServlet("/ConnectionPool2")
+public class ConnectionPoolServlet2 extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static long pooledDuration, nonPooledDuration;
 	private static long pooledCount, nonPooledCount;
 	private DataSource datasource = null;
-	private String fileStr = "ConnectionPoolServlet-1";
+	private String fileStr = "ConnectionPoolServlet-2";
 //	private static int batchCount;
 	
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public ConnectionPoolServlet() {
+    public ConnectionPoolServlet2() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -31,9 +31,9 @@ public class ConnectionPoolServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
     		System.out.println("["+fileStr+"] init()" 
-    				+ "::Hash=" + this.hashCode() 
-    				+ "::Name=" + Thread.currentThread().getName() 
-    				+ "::ID=" + Thread.currentThread().getId());
+				+ "::Hash=" + this.hashCode() 
+				+ "::Name=" + Thread.currentThread().getName() 
+				+ "::ID=" + Thread.currentThread().getId());
         try {
           //Create a datasource for pooled connections.
           //Register the driver for non pooled connections.
@@ -49,7 +49,7 @@ public class ConnectionPoolServlet extends HttpServlet {
       }
     @Override
     public void destroy() {
-        System.out.println("["+fileStr+"] destroy()" 
+    	System.out.println("["+fileStr+"] destroy()" 
         		+ "::Hash=" + this.hashCode() 
         		+ "::Name=" + Thread.currentThread().getName() 
         		+ "::ID=" + Thread.currentThread().getId());
@@ -80,18 +80,17 @@ public class ConnectionPoolServlet extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		long startTime = System.currentTimeMillis();
 		System.out.println("["+fileStr+"] doGet()"
-		+ "::Hash=" + this.hashCode() 
-		+ "::Name=" + Thread.currentThread().getName() 
-		+ "::ID=" + Thread.currentThread().getId());
+				+ "::Hash=" + this.hashCode() 
+				+ "::Name=" + Thread.currentThread().getName() 
+				+ "::ID=" + Thread.currentThread().getId());
 		
 		String queryStr = req.getQueryString();
 	    boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
 		//boolean poolingEnabled = false;
 	    PrintWriter	out = res.getWriter();
 	    res.setContentType("text/html");
-	    out.println("<html><head><title>Connection Pool 1</title></head><body>");
+	    out.println("<html><head><title>Connection Pool 2</title></head><body>");
 	    out.println("<br>PooledConnectionCount:"+pooledCount+", nonPooledConnectionCount:"+nonPooledCount+"<br>");
 	    if (pooledDuration > 0) {
 	      out.println("<br>"+ "Average pooled response:"+pooledDuration/pooledCount);
@@ -104,6 +103,8 @@ public class ConnectionPoolServlet extends HttpServlet {
 	    Statement stmt = null;
 	    ResultSet rs = null;
 	    
+	    long startTime = System.currentTimeMillis();
+
 	    try {
 	      connection = getConnection(poolingEnabled);
 	      stmt = connection.createStatement();
@@ -154,11 +155,10 @@ public class ConnectionPoolServlet extends HttpServlet {
 	      long elapsed = System.currentTimeMillis() - startTime;
 	      //Collect the times
 	      if (poolingEnabled)
-	        ConnectionPoolServlet.pooledDuration += elapsed;
+	        ConnectionPoolServlet2.pooledDuration += elapsed;
 	      else
-	    		ConnectionPoolServlet.nonPooledDuration += elapsed;
+	    		ConnectionPoolServlet2.nonPooledDuration += elapsed;
 	    }
-	    
 	    long endTime = System.currentTimeMillis();
 	    String endStr = "["+fileStr+"] doGet() End"
         		+ "::Hash=" + this.hashCode() 
@@ -288,6 +288,7 @@ public class ConnectionPoolServlet extends HttpServlet {
 			}
 			out.close();
 		}
+		
 		long endTime = System.currentTimeMillis();
 	    String endStr = "["+fileStr+"] doPost() End"
         		+ "::Hash=" + this.hashCode() 

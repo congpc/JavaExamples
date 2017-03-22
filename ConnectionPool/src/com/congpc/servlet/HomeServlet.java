@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
@@ -17,6 +16,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+//Demos: Async Servlet - Non Async Servlet - Thread - Thread Pool
+
 //DemoType 1: http://qiita.com/opengl-8080/items/7d51351cb540269e1d05#%E9%9D%9E%E5%90%8C%E6%9C%9F%E5%87%A6%E7%90%86%E3%82%92%E5%AE%9F%E8%A3%85%E3%81%99%E3%82%8B
 //DemoType 2: http://www.journaldev.com/2008/async-servlet-feature-of-servlet-3
 
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 //@WebServlet(value="/", initParams = {@WebInitParam(name="default", value="Demo NonAsyncServlet")})
 public class HomeServlet extends HttpServlet{
 	public static ExecutorService pool = Executors.newFixedThreadPool(10);
+	
 	private int sleepSecs = 5000; // default: sleep 5s
 	/**
 	 * 
@@ -34,9 +36,8 @@ public class HomeServlet extends HttpServlet{
 	private String defaultStr = "";
 	@Override
     public void init(ServletConfig config) throws ServletException {
-    		System.out.println("init() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
+    		System.out.println("[HomeServlet] init() : hash=" + this.hashCode() + " | thread=" + Thread.currentThread().getName());
     		defaultStr = config.getInitParameter("default");
-    		//if (defaultStr != null) System.out.println("default=" + defaultStr);
 	}
 	
 	@Override
