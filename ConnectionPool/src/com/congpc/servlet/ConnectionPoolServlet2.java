@@ -5,6 +5,8 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.sql.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.naming.*;
 import javax.sql.*;
 
@@ -18,64 +20,63 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 	private static long pooledCount, nonPooledCount;
 	private DataSource datasource = null;
 	private String fileStr = "ConnectionPoolServlet-2";
-//	private static int batchCount;
+	public static ExecutorService pool = Executors.newFixedThreadPool(50);
 	
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
-    public ConnectionPoolServlet2() {
-        super();
-        // TODO Auto-generated constructor stub
-    }
-    
-    @Override
-    public void init(ServletConfig config) throws ServletException {
-    		System.out.println("["+fileStr+"] init()" 
+	/**
+	* @see HttpServlet#HttpServlet()
+	*/
+	public ConnectionPoolServlet2() {
+		super();
+	}
+	
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+		System.out.println("["+fileStr+"] init()" 
 				+ "::Hash=" + this.hashCode() 
 				+ "::Name=" + Thread.currentThread().getName() 
 				+ "::ID=" + Thread.currentThread().getId());
-        try {
-          //Create a datasource for pooled connections.
-          //Register the driver for non pooled connections.
-          Context initCtx = new InitialContext();
-          Context envCtx = (Context) initCtx.lookup("java:comp/env");
-          datasource = (DataSource) envCtx.lookup("jdbc/ConnectionPool");
-          Class.forName("com.mysql.jdbc.Driver").newInstance();
-        }
-        catch (Exception e) {
-          //throw new ServletException(e.getMessage());
-          e.printStackTrace();
-        }
-      }
-    @Override
-    public void destroy() {
-    	System.out.println("["+fileStr+"] destroy()" 
-        		+ "::Hash=" + this.hashCode() 
-        		+ "::Name=" + Thread.currentThread().getName() 
-        		+ "::ID=" + Thread.currentThread().getId());
-    }
-    
-      private Connection getConnection(boolean pooledConnection) throws SQLException {
-        if (pooledConnection) {
-          pooledCount++;
-          return datasource.getConnection();
-        }
-        else {
-          nonPooledCount++;
-          Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/exampleDb", "congpc", "Demo_1987");
-          return con;
-        }
-      }
-      private Connection getPostConnection(boolean pooledConnection) throws SQLException {
-          if (pooledConnection) {
-            return datasource.getConnection();
-          }
-          else {
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/exampleDb", "congpc", "Demo_1987");
-            return con;
-          }
-        }
-      
+		try {
+			//Create a datasource for pooled connections.
+			//Register the driver for non pooled connections.
+			Context initCtx = new InitialContext();
+			Context envCtx = (Context) initCtx.lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/ConnectionPool");
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+		}
+		catch (Exception e) {
+			//throw new ServletException(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	@Override
+	public void destroy() {
+		System.out.println("["+fileStr+"] destroy()" 
+			+ "::Hash=" + this.hashCode() 
+			+ "::Name=" + Thread.currentThread().getName() 
+			+ "::ID=" + Thread.currentThread().getId());
+	}
+
+	private Connection getConnection(boolean pooledConnection) throws SQLException {
+		if (pooledConnection) {
+			pooledCount++;
+			return datasource.getConnection();
+		}
+		else {
+			nonPooledCount++;
+			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/exampleDb", "congpc", "Demo_1987");
+			return con;
+		}
+	}
+	
+	private Connection getPostConnection(boolean pooledConnection) throws SQLException {
+		if (pooledConnection) {
+			return datasource.getConnection();
+		}else {
+			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/exampleDb", "congpc", "Demo_1987");
+			return con;
+		}
+	}
+
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -86,86 +87,79 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 				+ "::ID=" + Thread.currentThread().getId());
 		
 		String queryStr = req.getQueryString();
-	    boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
+		boolean poolingEnabled = queryStr == null || !queryStr.equals("disablePooling");
 		//boolean poolingEnabled = false;
-	    PrintWriter	out = res.getWriter();
-	    res.setContentType("text/html");
-	    out.println("<html><head><title>Connection Pool 2</title></head><body>");
-	    out.println("<br>PooledConnectionCount:"+pooledCount+", nonPooledConnectionCount:"+nonPooledCount+"<br>");
-	    if (pooledDuration > 0) {
-	      out.println("<br>"+ "Average pooled response:"+pooledDuration/pooledCount);
-	    }
-	    if (nonPooledDuration > 0) {
-	    		out.println("<br>"+ "Average non pooled response:"+nonPooledDuration/nonPooledCount);
-	    }
+		PrintWriter	out = res.getWriter();
+		res.setContentType("text/html");
+		out.println("<html><head><title>Connection Pool 2</title></head><body>");
+		out.println("<br>PooledConnectionCount:"+pooledCount+", nonPooledConnectionCount:"+nonPooledCount+"<br>");
+		if (pooledDuration > 0) {
+			out.println("<br>"+ "Average pooled response:"+pooledDuration/pooledCount);
+		}
+		if (nonPooledDuration > 0) {
+			out.println("<br>"+ "Average non pooled response:"+nonPooledDuration/nonPooledCount);
+		}
 
-	    Connection connection = null;
-	    Statement stmt = null;
-	    ResultSet rs = null;
-	    
-	    long startTime = System.currentTimeMillis();
+		Connection connection = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		long startTime = System.currentTimeMillis();
 
-	    try {
-	      connection = getConnection(poolingEnabled);
-	      stmt = connection.createStatement();
-	      
-	      String sqlSelectCount = "SELECT COUNT(*) AS total FROM exampleDb.orders";
-	      rs = stmt.executeQuery(sqlSelectCount);
-	      int total = 0;
-	      while(rs.next()){
-	    	      total = rs.getInt("total");
-	    	  }
-	      out.println("<br>"+ "Item total:" + total);
-	      rs.close();
-	      
-	      String sqlSelect = "SELECT exampleDb.orders.orderID, exampleDb.orders.customerID, exampleDb.lines.lineID, exampleDb.lines.lineName, exampleDb.lines.productName FROM exampleDb.orders INNER JOIN exampleDb.lines ON exampleDb.lines.orderID = exampleDb.orders.orderID ORDER BY exampleDb.orders.orderID DESC LIMIT 100";
-	      rs = stmt.executeQuery(sqlSelect);
-	      ResultSetMetaData dbMeta = rs.getMetaData();
-	      out.println("<br><table border='1'>");
-
-	      //Create the table headers
-
-	      out.println("<tr>");
-	      for (int col=0; col<dbMeta.getColumnCount(); col++) {
-	        out.println("<th>" + dbMeta.getColumnName(col+1) + "</th>");
-	      }
-	      out.println("</tr>");
-
-	      //Create the table data
-
-	      while (rs.next()) {
-	        out.println("<tr>");
-	        for (int col=0; col < dbMeta.getColumnCount(); col++) {
-	          out.println("<td>" + rs.getString(col+1) + "</td>");
-	        }
-	        out.println("</tr>");
-	      }
-	      out.println("</table>");
-	      out.println("</body></html>");
-	      connection.close();
-	    }
-	    catch (SQLException e) {
-	      //throw new ServletException(e.getMessage());
-	      e.printStackTrace();
-	    }
-	    finally {
-	      try {if (rs != null) rs.close();} catch (SQLException e) {e.printStackTrace();}
-	      try {if (stmt != null) stmt.close();} catch (SQLException e) {e.printStackTrace();}
-	      try {if (connection != null) connection.close();} catch (SQLException e) {e.printStackTrace();}
-	      long elapsed = System.currentTimeMillis() - startTime;
-	      //Collect the times
-	      if (poolingEnabled)
-	        ConnectionPoolServlet2.pooledDuration += elapsed;
-	      else
-	    		ConnectionPoolServlet2.nonPooledDuration += elapsed;
-	    }
-	    long endTime = System.currentTimeMillis();
-	    String endStr = "["+fileStr+"] doGet() End"
-        		+ "::Hash=" + this.hashCode() 
-        		+"::Name=" + Thread.currentThread().getName() 
-        		+ "::ID=" + Thread.currentThread().getId() 
-        		+ "::Time Taken=" + (endTime - startTime) + " ms.";
-        System.out.println(endStr);
+		try {
+			connection = getConnection(poolingEnabled);
+			stmt = connection.createStatement();
+			String sqlSelectCount = "SELECT COUNT(*) AS total FROM exampleDb.orders";
+			rs = stmt.executeQuery(sqlSelectCount);
+			int total = 0;
+			while(rs.next()){
+				total = rs.getInt("total");
+			}
+			out.println("<br>"+ "Item total:" + total);
+			rs.close();
+			String sqlSelect = "SELECT exampleDb.orders.orderID, exampleDb.orders.customerID, exampleDb.lines.lineID, exampleDb.lines.lineName, exampleDb.lines.productName FROM exampleDb.orders INNER JOIN exampleDb.lines ON exampleDb.lines.orderID = exampleDb.orders.orderID ORDER BY exampleDb.orders.orderID DESC LIMIT 100";
+			rs = stmt.executeQuery(sqlSelect);
+			ResultSetMetaData dbMeta = rs.getMetaData();
+			out.println("<br><table border='1'>");
+			//Create the table headers
+			out.println("<tr>");
+			for (int col=0; col<dbMeta.getColumnCount(); col++) {
+				out.println("<th>" + dbMeta.getColumnName(col+1) + "</th>");
+			}
+			out.println("</tr>");
+			//Create the table data
+			while (rs.next()) {
+				out.println("<tr>");
+				for (int col=0; col < dbMeta.getColumnCount(); col++) {
+					out.println("<td>" + rs.getString(col+1) + "</td>");
+				}
+				out.println("</tr>");
+			}
+			out.println("</table>");
+			out.println("</body></html>");
+			connection.close();
+		}
+		catch (SQLException e) {
+			//throw new ServletException(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {if (rs != null) rs.close();} catch (SQLException e) {e.printStackTrace();}
+			try {if (stmt != null) stmt.close();} catch (SQLException e) {e.printStackTrace();}
+			try {if (connection != null) connection.close();} catch (SQLException e) {e.printStackTrace();}
+			long elapsed = System.currentTimeMillis() - startTime;
+			//Collect the times
+			if (poolingEnabled)
+				ConnectionPoolServlet2.pooledDuration += elapsed;
+			else
+				ConnectionPoolServlet2.nonPooledDuration += elapsed;
+		}
+		long endTime = System.currentTimeMillis();
+		String endStr = "["+fileStr+"] doGet() End"
+				+ "::Hash=" + this.hashCode() 
+				+"::Name=" + Thread.currentThread().getName() 
+				+ "::ID=" + Thread.currentThread().getId() 
+				+ "::Time Taken=" + (endTime - startTime) + " ms.";
+		System.out.println(endStr);
 	}
 	
 	/**
@@ -173,15 +167,17 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 		long startTime = System.currentTimeMillis();
-		System.out.println("["+fileStr+"] doPost()"
+		System.out.println("["+fileStr+"] doPost() - Start"
 		+ "::Hash=" + this.hashCode() 
 		+ "::Name=" + Thread.currentThread().getName() 
 		+ "::ID=" + Thread.currentThread().getId());
 		
 		boolean poolingEnabled = true;
-		boolean batchEnabled = false;
+		boolean batchEnabled = true;
 		boolean prepareEnabled = true;
 		int loopCount = 1;
+		int batchCount = 1;
+		boolean beforeEnabled = true;
 		
 		String poolingStr = req.getParameter("disablePooling");
 		if (poolingStr != null) {
@@ -199,10 +195,81 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 		if (loopStr != null) {
 			loopCount = Integer.valueOf(loopStr);
 		}
+		String batchLoopStr = req.getParameter("batchLoop");
+		if (loopStr != null) {
+			batchCount = Integer.valueOf(batchLoopStr);
+		}
+		String beforeStr = req.getParameter("disableBefore");
+		if (beforeStr != null) {
+			beforeEnabled = Boolean.valueOf(beforeStr);
+		}
+		
+		// Return before processing
+		long elapsed = System.currentTimeMillis() - startTime;
+		if (beforeEnabled) {
+			res.setContentType("text/html");
+			res.setCharacterEncoding("UTF-8");
+			PrintWriter out = res.getWriter();
+			out.append("{code:200,elapsed:"+elapsed+"}");
+			out.close();
+		}
+		
+		//Execute new thread
+		pool.execute(new RequestProcessRunnable(poolingEnabled , batchEnabled, prepareEnabled, loopCount, batchCount));
+		
+		// Return after processing
+		if (!beforeEnabled) {
+			elapsed = System.currentTimeMillis() - startTime;
+			res.setContentType("text/html");
+			res.setCharacterEncoding("UTF-8");
+			PrintWriter out = res.getWriter();
+			out.append("{code:200,elapsed:"+elapsed+"}");
+			out.close();
+		}
+				
+		elapsed = System.currentTimeMillis() - startTime;
+		String endStr = "["+fileStr+"] doPost() -   End"
+				+ "::Hash=" + this.hashCode() 
+				+ "::Name=" + Thread.currentThread().getName() 
+				+ "::ID=" + Thread.currentThread().getId() 
+				+ "::Time Taken=" + elapsed + " ms.";
+		System.out.println(endStr);
+	}
+	
+	public class RequestProcessRunnable implements Runnable {
+		boolean poolingEnabled;
+		boolean batchEnabled;
+		boolean prepareEnabled;
+		int loopCount;
+		int batchLoopCount;
+		
+		public RequestProcessRunnable(boolean poolingEnabled, boolean batchEnabled,boolean prepareEnabled,int loopCount,int batchLoopCount) {
+			this.poolingEnabled = poolingEnabled;
+			this.batchEnabled = batchEnabled;
+			this.prepareEnabled = prepareEnabled;
+			this.loopCount = loopCount;
+			this.batchLoopCount = batchLoopCount;
+		}
+		
+		public void run() {
+			try {
+				handleInsertRequest(this.poolingEnabled, this.batchEnabled, this.prepareEnabled, this.loopCount, this.batchLoopCount);
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	private void handleInsertRequest(boolean poolingEnabled, boolean batchEnabled,boolean prepareEnabled,int loopCount,int batchLoopCount) {
+		long startTime = System.currentTimeMillis();
+		System.out.println("["+fileStr+"] Running Executor - Start"
+		+ "::Hash=" + this.hashCode() 
+		+ "::Name=" + Thread.currentThread().getName() 
+		+ "::ID=" + Thread.currentThread().getId());
 		System.out.println("poolingEnabled="+poolingEnabled);
 		System.out.println("batchEnabled="+batchEnabled);
 		System.out.println("prepareEnabled="+prepareEnabled);
 		System.out.println("loop="+loopCount);
+		System.out.println("batch loop="+batchLoopCount);
 		
 		Connection connection = null;
 		PreparedStatement stmtp1 = null;
@@ -235,7 +302,7 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 				
 				if (batchEnabled) {
 					stmtp2 = connection.prepareStatement(sqlLineInsert);
-					for (int j = 0; j < 5; j++) {
+					for (int j = 1; j <= batchLoopCount; j++) {
 						name = j + "batch-name-" + orderID;
 						product = j + "batch-product-" + orderID;
 						stmtp2.setString(1, name);
@@ -273,26 +340,16 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 			try {if (stmt2 != null) stmt2.close();} catch (SQLException e) {e.printStackTrace();}
 			try {if (stmtp2 != null) stmtp2.close();} catch (SQLException e) {e.printStackTrace();}
 			try {if (connection != null) connection.close();} catch (SQLException e) {e.printStackTrace();}
-			long elapsed = System.currentTimeMillis() - startTime;
-			
-			res.setContentType("text/html");
-			res.setCharacterEncoding("UTF-8");
-			PrintWriter out = res.getWriter();
-			if (resultFlag) {
-				out.append("{code:200,elapsed:"+elapsed+"}");
-			} else {
-				out.append("{code:300,errorMessage:"+ errorMessage + "}");
-			}
-			out.close();
 		}
-		
+		if (resultFlag == false) {
+			System.out.println("Error:" + errorMessage);
+		}
 		long endTime = System.currentTimeMillis();
-	    String endStr = "["+fileStr+"] doPost() End"
-        		+ "::Hash=" + this.hashCode() 
-        		+ "::Name=" + Thread.currentThread().getName() 
-        		+ "::ID=" + Thread.currentThread().getId() 
-        		+ "::Time Taken=" + (endTime - startTime) + " ms.";
-        System.out.println(endStr);
+		String endStr = "["+fileStr+"] Running Executor -   End"
+				+ "::Hash=" + this.hashCode() 
+				+ "::Name=" + Thread.currentThread().getName() 
+				+ "::ID=" + Thread.currentThread().getId() 
+				+ "::Time Taken=" + (endTime - startTime) + " ms.";
+		System.out.println(endStr);
 	}
-
 }
