@@ -91,7 +91,7 @@ public class ConnectionPoolServlet extends HttpServlet {
 		//boolean poolingEnabled = false;
 		PrintWriter	out = res.getWriter();
 		res.setContentType("text/html");
-		out.println("<html><head><title>Connection Pool 2</title></head><body>");
+		out.println("<html><head><title>Connection Pool 1</title></head><body>");
 		out.println("<br>PooledConnectionCount:"+pooledCount+", nonPooledConnectionCount:"+nonPooledCount+"<br>");
 		if (pooledDuration > 0) {
 			out.println("<br>"+ "Average pooled response:"+pooledDuration/pooledCount);
@@ -171,7 +171,22 @@ public class ConnectionPoolServlet extends HttpServlet {
 		+ "::Hash=" + this.hashCode() 
 		+ "::Name=" + Thread.currentThread().getName() 
 		+ "::ID=" + Thread.currentThread().getId());
+		boolean beforeEnabled = false;
+		String beforeStr = req.getParameter("enableBefore");
+		if (beforeStr != null) {
+			if (Boolean.valueOf(beforeStr) == true) beforeEnabled = true;
+		}
 		
+		// Return before processing
+		long elapsed = System.currentTimeMillis() - startTime;
+		if (beforeEnabled == true) {
+			res.setContentType("text/html");
+			res.setCharacterEncoding("UTF-8");
+			PrintWriter out = res.getWriter();
+			out.append("{code:200,elapsed:"+elapsed+"}");
+			out.close();
+		}
+				
 		boolean poolingEnabled = true;
 		boolean batchEnabled = false;
 		boolean prepareEnabled = true;
@@ -180,29 +195,29 @@ public class ConnectionPoolServlet extends HttpServlet {
 		
 		String poolingStr = req.getParameter("disablePooling");
 		if (poolingStr != null) {
-			poolingEnabled = Boolean.valueOf(poolingStr); 
+			poolingEnabled = !Boolean.valueOf(poolingStr); 
 		}
 		String batchStr = req.getParameter("disableBatch");
 		if (batchStr != null) {
-			batchEnabled = Boolean.valueOf(batchStr); 
+			batchEnabled = !Boolean.valueOf(batchStr); 
 		}
 		String prepareStr = req.getParameter("disablePrepare");
 		if (prepareStr != null) {
-			prepareEnabled = Boolean.valueOf(prepareStr); 
+			prepareEnabled = !Boolean.valueOf(prepareStr); 
 		}
 		String loopStr = req.getParameter("loop");
 		if (loopStr != null) {
 			loopCount = Integer.valueOf(loopStr);
 		}
 		String batchLoopStr = req.getParameter("batchLoop");
-		if (loopStr != null) {
+		if (batchLoopStr != null) {
 			batchCount = Integer.valueOf(batchLoopStr);
 		}
 		
 		//Run normal
 		handleInsertRequest(poolingEnabled,batchEnabled,prepareEnabled,loopCount, batchCount);
 		
-		long elapsed = System.currentTimeMillis() - startTime;
+		elapsed = System.currentTimeMillis() - startTime;
 		res.setContentType("text/html");
 		res.setCharacterEncoding("UTF-8");
 		PrintWriter out = res.getWriter();

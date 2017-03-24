@@ -171,54 +171,53 @@ public class ConnectionPoolServlet2 extends HttpServlet {
 		+ "::Hash=" + this.hashCode() 
 		+ "::Name=" + Thread.currentThread().getName() 
 		+ "::ID=" + Thread.currentThread().getId());
-		
-		boolean poolingEnabled = true;
-		boolean batchEnabled = true;
-		boolean prepareEnabled = true;
-		int loopCount = 1;
-		int batchCount = 1;
-		boolean beforeEnabled = true;
-		
-		String poolingStr = req.getParameter("disablePooling");
-		if (poolingStr != null) {
-			poolingEnabled = Boolean.valueOf(poolingStr); 
-		}
-		String batchStr = req.getParameter("disableBatch");
-		if (batchStr != null) {
-			batchEnabled = Boolean.valueOf(batchStr); 
-		}
-		String prepareStr = req.getParameter("disablePrepare");
-		if (prepareStr != null) {
-			prepareEnabled = Boolean.valueOf(prepareStr); 
-		}
-		String loopStr = req.getParameter("loop");
-		if (loopStr != null) {
-			loopCount = Integer.valueOf(loopStr);
-		}
-		String batchLoopStr = req.getParameter("batchLoop");
-		if (loopStr != null) {
-			batchCount = Integer.valueOf(batchLoopStr);
-		}
-		String beforeStr = req.getParameter("disableBefore");
+		boolean beforeEnabled = false;
+		String beforeStr = req.getParameter("enableBefore");
 		if (beforeStr != null) {
-			beforeEnabled = Boolean.valueOf(beforeStr);
+			if (Boolean.valueOf(beforeStr) == true) beforeEnabled = true;
 		}
-		
 		// Return before processing
 		long elapsed = System.currentTimeMillis() - startTime;
-		if (beforeEnabled) {
+		if (beforeEnabled == true) {
 			res.setContentType("text/html");
 			res.setCharacterEncoding("UTF-8");
 			PrintWriter out = res.getWriter();
 			out.append("{code:200,elapsed:"+elapsed+"}");
 			out.close();
 		}
+				
+		boolean poolingEnabled = true;
+		boolean batchEnabled = true;
+		boolean prepareEnabled = true;
+		int loopCount = 1;
+		int batchCount = 1;
+		String poolingStr = req.getParameter("disablePooling");
+		if (poolingStr != null) {
+			poolingEnabled = !Boolean.valueOf(poolingStr); 
+		}
+		String batchStr = req.getParameter("disableBatch");
+		if (batchStr != null) {
+			batchEnabled = !Boolean.valueOf(batchStr); 
+		}
+		String prepareStr = req.getParameter("disablePrepare");
+		if (prepareStr != null) {
+			prepareEnabled = !Boolean.valueOf(prepareStr); 
+		}
+		
+		String loopStr = req.getParameter("loop");
+		if (loopStr != null) {
+			loopCount = Integer.valueOf(loopStr);
+		}
+		String batchLoopStr = req.getParameter("batchLoop");
+		if (batchLoopStr != null) {
+			batchCount = Integer.valueOf(batchLoopStr);
+		}
 		
 		//Execute new thread
 		pool.execute(new RequestProcessRunnable(poolingEnabled , batchEnabled, prepareEnabled, loopCount, batchCount));
 		
 		// Return after processing
-		if (!beforeEnabled) {
+		if (beforeEnabled == false) {
 			elapsed = System.currentTimeMillis() - startTime;
 			res.setContentType("text/html");
 			res.setCharacterEncoding("UTF-8");
