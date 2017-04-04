@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.naming.*;
 import javax.sql.*;
+import com.mchange.v2.c3p0.PooledDataSource;
 
 /**
  * Servlet implementation class ConnectionPoolServlet
@@ -39,9 +40,18 @@ public class ConnectionPoolServlet extends HttpServlet {
 			//Create a datasource for pooled connections.
 			//Register the driver for non pooled connections.
 			Context initCtx = new InitialContext();
-			Context envCtx = (Context) initCtx.lookup("java:comp/env");
-			datasource = (DataSource) envCtx.lookup("jdbc/ConnectionPool");
-			Class.forName("com.mysql.jdbc.Driver").newInstance();
+//			Context envCtx = (Context) initCtx.lookup("java:comp/env");
+//			datasource = (DataSource) envCtx.lookup("jdbc/ConnectionPool");
+			datasource = (DataSource) initCtx.lookup( "java:comp/env/jdbc/ConnectionPool");
+//			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			if ( datasource instanceof PooledDataSource){
+				PooledDataSource pds = (PooledDataSource)datasource;
+				System.err.println("num_connections: "	+ pds.getNumConnectionsDefaultUser());
+				System.err.println("num_busy_connections: " + pds.getNumBusyConnectionsDefaultUser());
+				System.err.println("num_idle_connections: " + pds.getNumIdleConnectionsDefaultUser());
+				System.err.println();
+			}else
+				System.err.println("Not a c3p0 PooledDataSource!");
 		}
 		catch (Exception e) {
 			//throw new ServletException(e.getMessage());

@@ -1,5 +1,5 @@
 <!-- path="/JavaExamples" docBase="servlets-examples" debug="5" reloadable="true" crossContext="true" -->
-<Context >
+<!-- <Context >
   <Resource name="jdbc/ConnectionPool" auth="Container"
               type="javax.sql.DataSource" 
               driverClassName="com.mysql.jdbc.Driver"
@@ -17,6 +17,21 @@
               testOnBorrow="true"
               validationQuery="SELECT 1"
               validationInterval="30000" /> 
+</Context> -->
+
+<!-- C3P0 : http://www.mchange.com/projects/c3p0/index.html#c3p0_properties -->
+<Context >
+	<Resource auth="Container" description="DB Connection"
+		  driverClass="com.mysql.jdbc.Driver"
+		  maxPoolSize="100"
+		  minPoolSize="10"
+		  acquireIncrement="1"
+		  name="jdbc/ConnectionPool"
+		  user="congpc"
+		  password="Demo_1987"
+		  factory="org.apache.naming.factory.BeanFactory"
+		  type="com.mchange.v2.c3p0.ComboPooledDataSource"
+		  jdbcUrl="jdbc:mysql://127.0.0.1:3306/msg_delivery" />
 </Context>
 
 <!-- <Context >
